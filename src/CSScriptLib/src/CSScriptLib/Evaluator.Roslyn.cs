@@ -309,6 +309,9 @@ namespace CSScriptLib
     /// <seealso cref="CSScriptLib.IEvaluator"/>
     public class RoslynEvaluator : EvaluatorBase<RoslynEvaluator>, IEvaluator
     {
+        static readonly ConditionalWeakTable<Assembly, AssemblyMetadata> metadataCache = 
+            new ConditionalWeakTable<Assembly, AssemblyMetadata>();
+        
         ScriptOptions compilerSettings = ScriptOptions.Default;
 
         /// <summary>
@@ -358,7 +361,18 @@ namespace CSScriptLib
 
         // NOTE: it's important to keep ToMetadataOnCore and ToMetadataOnFramework in separate methods to prevent
         // JIT from loading the code that is not compatible with the host app CLR version
-        static AssemblyMetadata ToMetadata(Assembly asm) => Runtime.IsCore ? ToMetadataOnCore(asm) : ToMetadataOnFramework(asm);
+        static AssemblyMetadata ToMetadata(Assembly asm)
+        {
+            try
+            {
+                return metadataCache.GetValue(asm, a =>
+                    Runtime.IsCore ? ToMetadataOnCore(a) : ToMetadataOnFramework(a));
+            }
+            catch (ArgumentNullException)
+            {
+                return null;
+            }
+        }
 
         static AssemblyMetadata ToMetadataOnCore(Assembly asm)
         {

@@ -37,6 +37,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
@@ -382,6 +383,17 @@ namespace CSScriptLib
             {
                 if (asm.TryGetRawMetadata(out var blob, out var length))
                     return AssemblyMetadata.Create(ModuleMetadata.CreateFromMetadata((IntPtr)blob, length));
+            }
+
+            if (!asm.Location.HasText())
+                return null;
+
+            try
+            {
+                return AssemblyMetadata.CreateFromFile(asm.Location);
+            }
+            catch
+            {
                 return null;
             }
         }

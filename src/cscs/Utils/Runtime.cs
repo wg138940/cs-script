@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using CSScripting;
@@ -472,7 +474,19 @@ namespace csscript
         /// Gets a value indicating whether the runtime is core.
         /// </summary>
         /// <value><c>true</c> if the runtime is core; otherwise, <c>false</c>.</value>
-        public static bool IsCore { get; } = "".GetType().Assembly.Location.Split(Path.DirectorySeparatorChar).Contains("Microsoft.NETCore.App");
+        public static bool IsCore
+        {
+            get
+            {
+                var corlib = typeof(object).Assembly;
+                if (corlib.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName?.Contains(".NETCoreApp") == true)
+                {
+                    return true;
+                }
+
+                return Path.GetFileName(corlib.Location).Contains("Microsoft.NETCore.App");
+            }
+        }
 
         static internal string CustomCommandsDir
             => "CSSCRIPT_COMMANDS".GetEnvar() ??
